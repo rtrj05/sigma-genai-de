@@ -1,0 +1,43 @@
+{
+  "file": "queries/slow_orders.sql",
+  "reviewed_at": "2026-05-25T17:17:14.429842",
+  "issues_found": 4,
+  "review": {
+    "issues": [
+      {
+        "severity": "Critical",
+        "category": "Correctness",
+        "title": "Incorrect table reference",
+        "line": "1",
+        "problem": "The query references a table 'orders' which does not exist in the provided schema. It should reference 'sigma_analytics.fact_transactions'.",
+        "fix": "SELECT t.transaction_id, t.amount FROM sigma_analytics.fact_transactions t"
+      },
+      {
+        "severity": "Critical",
+        "category": "Correctness",
+        "title": "Missing join with dim_merchant",
+        "line": "1",
+        "problem": "The query does not join with 'sigma_analytics.dim_merchant' to get merchant names instead of merchant_id.",
+        "fix": "JOIN sigma_analytics.dim_merchant m ON t.merchant_id = m.merchant_id"
+      },
+      {
+        "severity": "Medium",
+        "category": "Performance",
+        "title": "Potential performance issue with correlated subquery",
+        "line": "3",
+        "problem": "The use of a correlated subquery can lead to performance issues as it may not utilize indexes efficiently.",
+        "fix": "Use a JOIN with a subquery to calculate the average amount per customer_id."
+      },
+      {
+        "severity": "Low",
+        "category": "Readability",
+        "title": "Lack of comments",
+        "line": "1-7",
+        "problem": "The query lacks comments explaining the logic, which makes it harder to understand.",
+        "fix": "Add comments to explain the purpose of each part of the query."
+      }
+    ],
+    "corrected_sql": "WITH avg_amounts AS (SELECT customer_id, AVG(amount) AS avg_amount FROM sigma_analytics.fact_transactions WHERE status = 'COMPLETED' GROUP BY customer_id) SELECT t.transaction_id, t.amount, m.merchant_name FROM sigma_analytics.fact_transactions t JOIN avg_amounts aa ON t.customer_id = aa.customer_id JOIN sigma_analytics.dim_merchant m ON t.merchant_id = m.merchant_id WHERE t.amount > aa.avg_amount AND t.status = 'COMPLETED';",
+    "summary": "The query had several critical issues including incorrect table references and missing joins. It also had a performance issue with the correlated subquery and lacked readability due to the absence of comments."
+  }
+}

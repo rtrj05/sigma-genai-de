@@ -1,0 +1,51 @@
+{
+  "file": "queries/my_query.sql",
+  "reviewed_at": "2026-05-25T17:17:06.856247",
+  "issues_found": 5,
+  "review": {
+    "issues": [
+      {
+        "severity": "Critical",
+        "category": "Correctness",
+        "title": "Incorrect table names",
+        "line": "1",
+        "problem": "The query uses 'users' and 'orders' instead of the correct table names 'dim_customer' and 'fact_transactions'.",
+        "fix": "Replace 'users' with 'dim_customer' and 'orders' with 'fact_transactions'."
+      },
+      {
+        "severity": "Critical",
+        "category": "Correctness",
+        "title": "Incorrect column names",
+        "line": "1, 3",
+        "problem": "The query uses 'name', 'email', 'order_id', and 'amount' instead of the correct column names 'customer_name', 'email', 'transaction_id', and 'amount'.",
+        "fix": "Replace 'name' with 'customer_name', 'email' with 'email', 'order_id' with 'transaction_id', and 'amount' with 'amount'."
+      },
+      {
+        "severity": "Critical",
+        "category": "Correctness",
+        "title": "Missing filter for completed transactions",
+        "line": "4",
+        "problem": "The query does not filter for completed transactions, which is required to calculate revenue.",
+        "fix": "Add 'AND status = 'COMPLETED'' to the WHERE clause."
+      },
+      {
+        "severity": "Medium",
+        "category": "Performance",
+        "title": "Correlated subquery",
+        "line": "4",
+        "problem": "The correlated subquery can be inefficient as it runs for each row in the outer query.",
+        "fix": "Use a JOIN or a subquery in the FROM clause to avoid correlated subqueries."
+      },
+      {
+        "severity": "Low",
+        "category": "Readability",
+        "title": "Implicit join syntax",
+        "line": "1",
+        "problem": "The query uses implicit join syntax which is less readable compared to explicit JOIN syntax.",
+        "fix": "Replace the comma-separated table list with an explicit JOIN clause."
+      }
+    ],
+    "corrected_sql": "SELECT dc.customer_name, dc.email, ft.transaction_id\nFROM sigma_analytics.dim_customer dc\nJOIN sigma_analytics.fact_transactions ft ON dc.customer_id = ft.customer_id\nWHERE ft.amount > (\n    SELECT AVG(amount)\n    FROM sigma_analytics.fact_transactions\n    WHERE customer_id = dc.customer_id\n) AND ft.status = 'COMPLETED';",
+    "summary": "The query had several critical correctness issues due to incorrect table and column names, and a missing filter for completed transactions. It also had a performance issue with a correlated subquery and a readability issue with implicit join syntax."
+  }
+}

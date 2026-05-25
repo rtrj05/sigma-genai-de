@@ -1,0 +1,188 @@
+{
+  "directory": "queries/",
+  "reviewed_at": "2026-05-25T17:17:21.002572",
+  "files_reviewed": 4,
+  "total_issues": 17,
+  "files": [
+    {
+      "file": "queries/customer_leak.sql",
+      "reviewed_at": "2026-05-25T17:16:57.849915",
+      "issues_found": 4,
+      "review": {
+        "issues": [
+          {
+            "severity": "Critical",
+            "category": "Correctness",
+            "title": "Missing JOIN clause",
+            "line": "1",
+            "problem": "The query is missing a JOIN clause to link the customers table with other tables.",
+            "fix": "JOIN dim_customer ON customers.customer_id = dim_customer.customer_id"
+          },
+          {
+            "severity": "Critical",
+            "category": "Correctness",
+            "title": "Incorrect table name",
+            "line": "1",
+            "problem": "The table name 'customers' does not match the schema's 'dim_customer'.",
+            "fix": "FROM dim_customer"
+          },
+          {
+            "severity": "Medium",
+            "category": "Readability",
+            "title": "Lack of comments",
+            "line": "1",
+            "problem": "The query lacks comments explaining its purpose or logic.",
+            "fix": "-- Select customer name, email, and phone number from the customer table"
+          },
+          {
+            "severity": "High",
+            "category": "Security",
+            "title": "PII exposure",
+            "line": "1",
+            "problem": "The query is selecting sensitive information like email and phone number without any context or restrictions.",
+            "fix": "-- Ensure proper access controls are in place before selecting sensitive information"
+          }
+        ],
+        "corrected_sql": "-- Select customer name, email, and phone number from the customer table\nSELECT dc.customer_name, dc.email, dc.phone_number\nFROM dim_customer dc\nWHERE dc.email IS NOT NULL AND dc.phone_number IS NOT NULL\n-- Ensure proper access controls are in place before selecting sensitive information",
+        "summary": "The query has critical correctness issues due to missing JOIN and incorrect table name. It also has readability and security issues due to lack of comments and PII exposure."
+      }
+    },
+    {
+      "file": "queries/my_query.sql",
+      "reviewed_at": "2026-05-25T17:17:06.856247",
+      "issues_found": 5,
+      "review": {
+        "issues": [
+          {
+            "severity": "Critical",
+            "category": "Correctness",
+            "title": "Incorrect table names",
+            "line": "1",
+            "problem": "The query uses 'users' and 'orders' instead of the correct table names 'dim_customer' and 'fact_transactions'.",
+            "fix": "Replace 'users' with 'dim_customer' and 'orders' with 'fact_transactions'."
+          },
+          {
+            "severity": "Critical",
+            "category": "Correctness",
+            "title": "Incorrect column names",
+            "line": "1, 3",
+            "problem": "The query uses 'name', 'email', 'order_id', and 'amount' instead of the correct column names 'customer_name', 'email', 'transaction_id', and 'amount'.",
+            "fix": "Replace 'name' with 'customer_name', 'email' with 'email', 'order_id' with 'transaction_id', and 'amount' with 'amount'."
+          },
+          {
+            "severity": "Critical",
+            "category": "Correctness",
+            "title": "Missing filter for completed transactions",
+            "line": "4",
+            "problem": "The query does not filter for completed transactions, which is required to calculate revenue.",
+            "fix": "Add 'AND status = 'COMPLETED'' to the WHERE clause."
+          },
+          {
+            "severity": "Medium",
+            "category": "Performance",
+            "title": "Correlated subquery",
+            "line": "4",
+            "problem": "The correlated subquery can be inefficient as it runs for each row in the outer query.",
+            "fix": "Use a JOIN or a subquery in the FROM clause to avoid correlated subqueries."
+          },
+          {
+            "severity": "Low",
+            "category": "Readability",
+            "title": "Implicit join syntax",
+            "line": "1",
+            "problem": "The query uses implicit join syntax which is less readable compared to explicit JOIN syntax.",
+            "fix": "Replace the comma-separated table list with an explicit JOIN clause."
+          }
+        ],
+        "corrected_sql": "SELECT dc.customer_name, dc.email, ft.transaction_id\nFROM sigma_analytics.dim_customer dc\nJOIN sigma_analytics.fact_transactions ft ON dc.customer_id = ft.customer_id\nWHERE ft.amount > (\n    SELECT AVG(amount)\n    FROM sigma_analytics.fact_transactions\n    WHERE customer_id = dc.customer_id\n) AND ft.status = 'COMPLETED';",
+        "summary": "The query had several critical correctness issues due to incorrect table and column names, and a missing filter for completed transactions. It also had a performance issue with a correlated subquery and a readability issue with implicit join syntax."
+      }
+    },
+    {
+      "file": "queries/slow_orders.sql",
+      "reviewed_at": "2026-05-25T17:17:14.429842",
+      "issues_found": 4,
+      "review": {
+        "issues": [
+          {
+            "severity": "Critical",
+            "category": "Correctness",
+            "title": "Incorrect table reference",
+            "line": "1",
+            "problem": "The query references a table 'orders' which does not exist in the provided schema. It should reference 'sigma_analytics.fact_transactions'.",
+            "fix": "SELECT t.transaction_id, t.amount FROM sigma_analytics.fact_transactions t"
+          },
+          {
+            "severity": "Critical",
+            "category": "Correctness",
+            "title": "Missing join with dim_merchant",
+            "line": "1",
+            "problem": "The query does not join with 'sigma_analytics.dim_merchant' to get merchant names instead of merchant_id.",
+            "fix": "JOIN sigma_analytics.dim_merchant m ON t.merchant_id = m.merchant_id"
+          },
+          {
+            "severity": "Medium",
+            "category": "Performance",
+            "title": "Potential performance issue with correlated subquery",
+            "line": "3",
+            "problem": "The use of a correlated subquery can lead to performance issues as it may not utilize indexes efficiently.",
+            "fix": "Use a JOIN with a subquery to calculate the average amount per customer_id."
+          },
+          {
+            "severity": "Low",
+            "category": "Readability",
+            "title": "Lack of comments",
+            "line": "1-7",
+            "problem": "The query lacks comments explaining the logic, which makes it harder to understand.",
+            "fix": "Add comments to explain the purpose of each part of the query."
+          }
+        ],
+        "corrected_sql": "WITH avg_amounts AS (SELECT customer_id, AVG(amount) AS avg_amount FROM sigma_analytics.fact_transactions WHERE status = 'COMPLETED' GROUP BY customer_id) SELECT t.transaction_id, t.amount, m.merchant_name FROM sigma_analytics.fact_transactions t JOIN avg_amounts aa ON t.customer_id = aa.customer_id JOIN sigma_analytics.dim_merchant m ON t.merchant_id = m.merchant_id WHERE t.amount > aa.avg_amount AND t.status = 'COMPLETED';",
+        "summary": "The query had several critical issues including incorrect table references and missing joins. It also had a performance issue with the correlated subquery and lacked readability due to the absence of comments."
+      }
+    },
+    {
+      "file": "queries/wrong_join.sql",
+      "reviewed_at": "2026-05-25T17:17:21.000500",
+      "issues_found": 4,
+      "review": {
+        "issues": [
+          {
+            "severity": "Critical",
+            "category": "Correctness",
+            "title": "Mismatched join condition",
+            "line": "ON c.customer_id = o.order_id",
+            "problem": "The join condition is incorrect. It should join on customer_id from customers and customer_id from orders.",
+            "fix": "ON c.customer_id = o.customer_id"
+          },
+          {
+            "severity": "Medium",
+            "category": "Readability",
+            "title": "Alias not descriptive",
+            "line": "SELECT c.name, o.order_id",
+            "problem": "The alias 'c' and 'o' are not descriptive. It's better to use full table names or more descriptive aliases.",
+            "fix": "SELECT c.customer_name, o.order_id"
+          },
+          {
+            "severity": "Medium",
+            "category": "Readability",
+            "title": "Missing table aliases",
+            "line": "FROM customers c JOIN orders o",
+            "problem": "Table aliases should be used for better readability and to avoid confusion.",
+            "fix": "FROM sigma_analytics.dim_customer c JOIN sigma_analytics.fact_transactions o"
+          },
+          {
+            "severity": "Medium",
+            "category": "Readability",
+            "title": "Lack of comments",
+            "line": "N/A",
+            "problem": "There are no comments explaining the purpose of the query.",
+            "fix": "Add comments explaining the purpose of the query."
+          }
+        ],
+        "corrected_sql": "SELECT c.customer_name, o.transaction_id AS order_id\nFROM sigma_analytics.dim_customer c\nJOIN sigma_analytics.fact_transactions o\nON c.customer_id = o.customer_id;",
+        "summary": "The query had a critical correctness issue with the join condition and several readability issues. The corrected query now joins on the correct fields and includes more descriptive aliases."
+      }
+    }
+  ]
+}

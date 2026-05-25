@@ -1,0 +1,43 @@
+{
+  "file": "queries/wrong_join.sql",
+  "reviewed_at": "2026-05-25T17:17:21.000500",
+  "issues_found": 4,
+  "review": {
+    "issues": [
+      {
+        "severity": "Critical",
+        "category": "Correctness",
+        "title": "Mismatched join condition",
+        "line": "ON c.customer_id = o.order_id",
+        "problem": "The join condition is incorrect. It should join on customer_id from customers and customer_id from orders.",
+        "fix": "ON c.customer_id = o.customer_id"
+      },
+      {
+        "severity": "Medium",
+        "category": "Readability",
+        "title": "Alias not descriptive",
+        "line": "SELECT c.name, o.order_id",
+        "problem": "The alias 'c' and 'o' are not descriptive. It's better to use full table names or more descriptive aliases.",
+        "fix": "SELECT c.customer_name, o.order_id"
+      },
+      {
+        "severity": "Medium",
+        "category": "Readability",
+        "title": "Missing table aliases",
+        "line": "FROM customers c JOIN orders o",
+        "problem": "Table aliases should be used for better readability and to avoid confusion.",
+        "fix": "FROM sigma_analytics.dim_customer c JOIN sigma_analytics.fact_transactions o"
+      },
+      {
+        "severity": "Medium",
+        "category": "Readability",
+        "title": "Lack of comments",
+        "line": "N/A",
+        "problem": "There are no comments explaining the purpose of the query.",
+        "fix": "Add comments explaining the purpose of the query."
+      }
+    ],
+    "corrected_sql": "SELECT c.customer_name, o.transaction_id AS order_id\nFROM sigma_analytics.dim_customer c\nJOIN sigma_analytics.fact_transactions o\nON c.customer_id = o.customer_id;",
+    "summary": "The query had a critical correctness issue with the join condition and several readability issues. The corrected query now joins on the correct fields and includes more descriptive aliases."
+  }
+}

@@ -1,0 +1,43 @@
+{
+  "file": "queries/customer_leak.sql",
+  "reviewed_at": "2026-05-25T17:16:57.849915",
+  "issues_found": 4,
+  "review": {
+    "issues": [
+      {
+        "severity": "Critical",
+        "category": "Correctness",
+        "title": "Missing JOIN clause",
+        "line": "1",
+        "problem": "The query is missing a JOIN clause to link the customers table with other tables.",
+        "fix": "JOIN dim_customer ON customers.customer_id = dim_customer.customer_id"
+      },
+      {
+        "severity": "Critical",
+        "category": "Correctness",
+        "title": "Incorrect table name",
+        "line": "1",
+        "problem": "The table name 'customers' does not match the schema's 'dim_customer'.",
+        "fix": "FROM dim_customer"
+      },
+      {
+        "severity": "Medium",
+        "category": "Readability",
+        "title": "Lack of comments",
+        "line": "1",
+        "problem": "The query lacks comments explaining its purpose or logic.",
+        "fix": "-- Select customer name, email, and phone number from the customer table"
+      },
+      {
+        "severity": "High",
+        "category": "Security",
+        "title": "PII exposure",
+        "line": "1",
+        "problem": "The query is selecting sensitive information like email and phone number without any context or restrictions.",
+        "fix": "-- Ensure proper access controls are in place before selecting sensitive information"
+      }
+    ],
+    "corrected_sql": "-- Select customer name, email, and phone number from the customer table\nSELECT dc.customer_name, dc.email, dc.phone_number\nFROM dim_customer dc\nWHERE dc.email IS NOT NULL AND dc.phone_number IS NOT NULL\n-- Ensure proper access controls are in place before selecting sensitive information",
+    "summary": "The query has critical correctness issues due to missing JOIN and incorrect table name. It also has readability and security issues due to lack of comments and PII exposure."
+  }
+}
