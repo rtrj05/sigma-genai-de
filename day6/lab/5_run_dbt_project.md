@@ -193,3 +193,4 @@ Screenshot your terminal output and keep it — it is evidence for your push.
 ## Bonus Challenge
 
 The mart model calculates `failure_rate_pct`. Add a new dbt test that checks this value is always between 0 and 100. Write the YAML by hand — do not use AI for this one. Then run `dbt test` to confirm it passes.
+\
